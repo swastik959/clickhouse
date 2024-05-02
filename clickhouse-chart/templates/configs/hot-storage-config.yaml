@@ -1,0 +1,7 @@
+config:
+  storage_policy:
+    mode: 'hot'
+    move_factor: {{ .Values.moveFactor }}
+  volume:
+    path: '/clickhouse/hot-data'
+    max_data_part_size: '{{ .Values.hotStorageSize }}'

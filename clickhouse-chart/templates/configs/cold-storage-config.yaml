@@ -1,0 +1,7 @@
+config:
+  storage_policy:
+    mode: 'cold'
+    move_factor: {{ .Values.moveFactor }}
+  volume:
+    path: '/clickhouse/cold-data'
+    max_data_part_size: '{{ .Values.coldStorageSize }}'

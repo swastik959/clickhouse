@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+spec:
+  serviceName: clickhouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+    spec:
+      containers:
+      - name: clickhouse
+        image: clickhouse/clickhouse-server:22.3
+        ports:
+        - containerPort: 8123
+        volumeMounts:
+        - name: hot-storage
+          mountPath: /clickhouse/hot-data
+        - name: cold-storage
+          mountPath: /clickhouse/cold-data
+        - name: config-volume
+          mountPath: /etc/clickhouse-server/config.d
+      volumes:
+      - name: hot-storage
+        emptyDir: {}
+      - name: cold-storage
+        emptyDir: {}
+      - name: config-volume
+        configMap:
+          name: clickhouse-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-config
+data:
+  hot-storage-config.xml: |
+{{ (.Files.Glob "configs/hot-storage-config.yaml").AsConfig | indent 4 }}
+  cold-storage-config.xml: |
+{{ (.Files.Glob "configs/cold-storage-config.yaml").AsConfig | indent 4 }}
