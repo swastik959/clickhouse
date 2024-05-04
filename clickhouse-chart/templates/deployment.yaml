@@ -13,30 +13,27 @@ spec:
         app: {{ template "clickhouse.name" . }}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: 8123
-              protocol: TCP
-          volumeMounts:
-            - name: data-hot
-              mountPath: /var/lib/clickhouse/data/hot
-            - name: data-cold
-              mountPath: /var/lib/clickhouse/data/cold
-            - name: config
-              mountPath: /etc/clickhouse-server/config.d/
-      volumes:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8123
+          protocol: TCP
+        volumeMounts:
         - name: data-hot
-          persistentVolumeClaim:
-            claimName: hot
+          mountPath: /var/lib/clickhouse/data/hot/
         - name: data-cold
-          persistentVolumeClaim:
-            claimName: cold
+          mountPath: /var/lib/clickhouse/data/cold/
         - name: config
-          configMap:
-            name: {{ template "clickhouse.fullname" . }}
-            items:
-              - key: config.xml
-                path: config.xml
+          mountPath: /etc/clickhouse-server/config.d/
+      volumes:
+      - name: data-hot
+        persistentVolumeClaim:
+          claimName: hot
+      - name: data-cold
+        persistentVolumeClaim:
+          claimName: cold
+      - name: config
+        configMap:
+          name: {{ template "clickhouse.fullname" . }}

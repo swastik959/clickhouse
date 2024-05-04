@@ -27,26 +27,38 @@ metadata:
   name: {{ template "clickhouse.fullname" . }}
 data:
   config.xml: |
+    <?xml version="1.0"?>
     <yandex>
       <storage_configuration>
         <disks>
           <hot>
+            <type>local</type>
             <path>/var/lib/clickhouse/data/hot/</path>
-            <keep_free_space_bytes>1073741824</keep_free_space_bytes>
           </hot>
           <cold>
+            <type>local</type>
             <path>/var/lib/clickhouse/data/cold/</path>
-            <keep_free_space_bytes>1073741824</keep_free_space_bytes>
           </cold>
         </disks>
         <policies>
-          <hot_to_cold>
+          <hot>
             <volumes>
-              <volume>hot</volume>
-              <volume>cold</volume>
+              <single_volume>
+                <disk>hot</disk>
+              </single_volume>
             </volumes>
             <move_factor>{{ .Values.configMap.moveFactor }}</move_factor>
-          </hot_to_cold>
+            <max_data_part_size_bytes>{{ .Values.storage.hot.size }}</max_data_part_size_bytes>
+          </hot>
+          <cold>
+            <volumes>
+              <single_volume>
+                <disk>cold</disk>
+              </single_volume>
+            </volumes>
+            <move_factor>{{ .Values.configMap.moveFactor }}</move_factor>
+            <max_data_part_size_bytes>{{ .Values.storage.cold.size }}</max_data_part_size_bytes>
+          </cold>
         </policies>
       </storage_configuration>
     </yandex>
