@@ -1,3 +1,68 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hot
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cold
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-config
+data:
+  config.xml: |
+    <?xml version="1.0"?>
+    <yandex>
+      <storage_configuration>
+        <disks>
+          <hot>
+            <type>file</type>
+            <path>/var/lib/clickhouse/hot</path>
+          </hot>
+          <cold>
+            <type>file</type>
+            <path>/var/lib/clickhouse/cold</path>
+          </cold>
+        </disks>
+        <policies>
+          <hot>
+            <volumes>
+              <single_volume>
+                <disk>hot</disk>
+              </single_volume>
+            </volumes>
+            <move_factor>0.2</move_factor>
+            <max_data_part_size_bytes>5368709120</max_data_part_size_bytes>
+          </hot>
+          <cold>
+            <volumes>
+              <single_volume>
+                <disk>cold</disk>
+              </single_volume>
+            </volumes>
+            <move_factor>0.2</move_factor>
+            <max_data_part_size_bytes>10737418240</max_data_part_size_bytes>
+          </cold>
+        </policies>
+      </storage_configuration>
+    </yandex>
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -13,36 +78,34 @@ spec:
       labels:
         app: clickhouse
     spec:
+      initContainers:
+      - name: init-clickhouse
+        image: busybox
+        command: ['sh', '-c', 'chown -R clickhouse:clickhouse /var/lib/clickhouse']
+        volumeMounts:
+        - name: hot
+          mountPath: /var/lib/clickhouse/hot
+        - name: cold
+          mountPath: /var/lib/clickhouse/cold
       containers:
       - name: clickhouse
         image: clickhouse/clickhouse-server:22.3
         ports:
         - containerPort: 8123
         volumeMounts:
-        - name: hot-storage
-          mountPath: /clickhouse/hot-data
-        - name: cold-storage
-          mountPath: /clickhouse/cold-data
+        - name: hot
+          mountPath: /var/lib/clickhouse/hot
+        - name: cold
+          mountPath: /var/lib/clickhouse/cold
         - name: config-volume
-          mountPath: /etc/clickhouse-server/config.d
+          mountPath: /etc/clickhouse-server
       volumes:
-      - name: hot-storage
-        emptyDir: {}
-      - name: cold-storage
-        emptyDir: {}
+      - name: hot
+        persistentVolumeClaim:
+          claimName: hot
+      - name: cold
+        persistentVolumeClaim:
+          claimName: cold
       - name: config-volume
         configMap:
           name: clickhouse-config
-
----
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clickhouse-config
-data:
-  hot-storage-config.xml: |
-{{ (.Files.Glob "configs/hot-storage-config.yaml").AsConfig | indent 4 }}
-  cold-storage-config.xml: |
-{{ (.Files.Glob "configs/cold-storage-config.yaml").AsConfig | indent 4 }}
