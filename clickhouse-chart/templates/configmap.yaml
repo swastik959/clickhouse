@@ -1,0 +1,52 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hot
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cold
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "clickhouse.fullname" . }}
+data:
+  config.xml: |
+    <yandex>
+      <storage_configuration>
+        <disks>
+          <hot>
+            <path>/var/lib/clickhouse/data/hot/</path>
+            <keep_free_space_bytes>1073741824</keep_free_space_bytes>
+          </hot>
+          <cold>
+            <path>/var/lib/clickhouse/data/cold/</path>
+            <keep_free_space_bytes>1073741824</keep_free_space_bytes>
+          </cold>
+        </disks>
+        <policies>
+          <hot_to_cold>
+            <volumes>
+              <volume>hot</volume>
+              <volume>cold</volume>
+            </volumes>
+            <move_factor>{{ .Values.configMap.moveFactor }}</move_factor>
+          </hot_to_cold>
+        </policies>
+      </storage_configuration>
+    </yandex>

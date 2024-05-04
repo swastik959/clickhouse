@@ -1,3 +1,20 @@
-moveFactor: 0.2
-hotStorageSize: 53687091
-coldStorageSize: 107374182
+replicaCount: 1
+image:
+  repository: yandex/clickhouse-server
+  tag: 21.3.10
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    memory: 16Gi
+  requests:
+    memory: 8Gi
+
+storage:
+  hot:
+    size: 5Gi
+  cold:
+    size: 10Gi
+
+configMap:
+  moveFactor: 0.2
