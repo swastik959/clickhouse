@@ -5,7 +5,7 @@ metadata:
   name: hot
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
@@ -16,7 +16,7 @@ metadata:
   name: cold
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
@@ -24,41 +24,36 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "clickhouse.fullname" . }}
+  name: {{template "clickhouse.fullname" .}}
 data:
   config.xml: |
     <?xml version="1.0"?>
     <yandex>
-      <storage_configuration>
-        <disks>
-          <hot>
-            <type>local</type>
-            <path>/var/lib/clickhouse/data/hot/</path>
-          </hot>
-          <cold>
-            <type>local</type>
-            <path>/var/lib/clickhouse/data/cold/</path>
-          </cold>
-        </disks>
-        <policies>
-          <hot>
-            <volumes>
-              <single_volume>
-                <disk>hot</disk>
-              </single_volume>
-            </volumes>
-            <move_factor>{{ .Values.configMap.moveFactor }}</move_factor>
-            <max_data_part_size_bytes>{{ .Values.storage.hot.size }}</max_data_part_size_bytes>
-          </hot>
-          <cold>
-            <volumes>
-              <single_volume>
-                <disk>cold</disk>
-              </single_volume>
-            </volumes>
-            <move_factor>{{ .Values.configMap.moveFactor }}</move_factor>
-            <max_data_part_size_bytes>{{ .Values.storage.cold.size }}</max_data_part_size_bytes>
-          </cold>
-        </policies>
-      </storage_configuration>
+        <storage_configuration>
+            <disks>
+                <hot>
+                    <type>local</type>
+                    <path>/var/lib/clickhouse/data/hot/</path>
+                </hot>
+                <cold>
+                    <type>local</type>
+                    <path>/var/lib/clickhouse/data/cold/</path>
+                </cold>
+            </disks>
+            <policies>
+                <hot_cold_policy>
+                    <volumes>
+                        <hot>
+                            <disk>hot</disk>
+                            <max_data_part_size_bytes>5368709120</max_data_part_size_bytes>
+                        </hot>
+                        <cold>
+                            <disk>cold</disk>
+                            <max_data_part_size_bytes>10737418240</max_data_part_size_bytes>
+                        </cold>
+                    </volumes>
+                    <move_factor>0.2</move_factor>
+                </hot_cold_policy>
+            </policies>
+        </storage_configuration>
     </yandex>

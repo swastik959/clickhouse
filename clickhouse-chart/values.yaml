@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: yandex/clickhouse-server
-  tag: 21.3.10
+  tag: 21.3.2
   pullPolicy: IfNotPresent
 
 resources:
@@ -10,11 +10,4 @@ resources:
   requests:
     memory: 8Gi
 
-storage:
-  hot:
-    size: 5Gi
-  cold:
-    size: 10Gi
 
-configMap:
-  moveFactor: 0.2
